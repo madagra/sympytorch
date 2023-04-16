@@ -9,6 +9,9 @@ def _reduce(fn):
         return ft.reduce(fn, args)
     return fn_
 
+def _I(*args):
+    return torch.tensor(1j)
+
 
 _global_func_lookup = {
     sympy.Mul: _reduce(torch.mul),
@@ -60,6 +63,7 @@ _global_func_lookup = {
     sympy.Trace: torch.trace,
     # Note: May raise error for integer matrices.
     sympy.Determinant: torch.det,
+    sympy.core.numbers.ImaginaryUnit: _I
 }
 
 
@@ -88,10 +92,6 @@ class _Node(torch.nn.Module):
             if len(expr.args) != 1 or not issubclass(expr.args[0].func, sympy.Float):
                 raise ValueError("UnevaluatedExpr should only be used to wrap floats.")
             self.register_buffer('_value', torch.tensor(float(expr.args[0])))
-            self._torch_func = lambda: self._value
-            self._args = ()
-        elif issubclass(expr.func, sympy.core.numbers.ImaginaryUnit):
-            self._value = torch.tensor(1j)
             self._torch_func = lambda: self._value
             self._args = ()
         elif issubclass(expr.func, sympy.Symbol):
