@@ -108,3 +108,15 @@ def test_half2():
     y_tilde = mod(x=torch.tensor(xvals, dtype=torch.float64))[:, 0]
     error = y_tilde.detach().numpy() - np.abs(xvals) ** 0.5
     assert (error**2).mean() < 1e-10, "error:{}".format((error**2).mean())
+
+
+def test_complex():
+
+    x = sympy.symbols("x")
+    expr = 2.0 * sympy.I * x
+
+    mod = sympytorch.SymPyModule(expressions=[expr])
+    x_ = torch.rand(3)
+    out = mod(x=x_)
+    assert torch.equal(out[:, 0], 2.0 * 1j * x_)
+    assert mod.sympy() == [expr]

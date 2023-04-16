@@ -72,7 +72,7 @@ class _Node(torch.nn.Module):
         if issubclass(expr.func, sympy.Float):
             self._value = torch.nn.Parameter(torch.tensor(float(expr)))
             self._torch_func = lambda: self._value
-            self._args = ()
+            self._args = ()          
         elif issubclass(expr.func, sympy.Rational):
             self.register_buffer('_numerator', torch.tensor(expr.p, dtype=torch.get_default_dtype()))
             self.register_buffer('_denominator', torch.tensor(expr.q, dtype=torch.get_default_dtype()))
@@ -88,6 +88,10 @@ class _Node(torch.nn.Module):
             if len(expr.args) != 1 or not issubclass(expr.args[0].func, sympy.Float):
                 raise ValueError("UnevaluatedExpr should only be used to wrap floats.")
             self.register_buffer('_value', torch.tensor(float(expr.args[0])))
+            self._torch_func = lambda: self._value
+            self._args = ()
+        elif issubclass(expr.func, sympy.core.numbers.ImaginaryUnit):
+            self._value = torch.tensor(1j)
             self._torch_func = lambda: self._value
             self._args = ()
         elif issubclass(expr.func, sympy.Symbol):
@@ -118,6 +122,8 @@ class _Node(torch.nn.Module):
                 return sympy.S.Half
             else:
                 return self._sympy_func(self._numerator.item(), self._denominator.item())
+        elif issubclass(self._sympy_func, sympy.core.numbers.ImaginaryUnit):
+            return sympy.I
         elif issubclass(self._sympy_func, sympy.Symbol):
             return self._sympy_func(self._name)
         else:
